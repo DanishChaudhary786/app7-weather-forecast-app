@@ -1,5 +1,6 @@
 import streamlit as st
 import plotly.express as px
+from weather import get_data
 
 st.title("Weather Forecast for the Next Days")
 place = st.text_input("Place: ")
@@ -8,15 +9,21 @@ option = st.selectbox("Select data to view", ("Temperature", "Sky"))
 
 st.subheader(f"{option} for the next {days} days in {place}")
 
-
-def get_data(days):
-    dates = ["2024-07-10","2024-07-11", "2024-07-12", "2024-07-13"]
-    temperatures = [10,20,3,40]
-    temperatures = [days * i for i in temperatures]
-    return dates, temperatures
-
-
-d, t = get_data(3)
-
-figure = px.line(x=d, y=t, labels={"x": "Date", "y": "Temperature (C)"})
-st.plotly_chart(figure)
+if place:
+    try:
+        filtered_data = get_data(place, days)
+        # Calling the Get data function
+        if option == "Temperature":
+            # Creating a temperature list
+            temperature = [dict["main"]["temp"] / 10 for dict in filtered_data]
+            dates = [dict["dt_txt"] for dict in filtered_data]
+            figure = px.line(x=dates, y=temperature, labels={"x": "Date", "y": "Temperature (C)"})
+            st.plotly_chart(figure)
+        else:
+            images = {"Clear": "images/clear.png", "Clouds": "images/cloud.png", "Rain": "images/rain.png",
+                      "Snow": "images/snow.png"}
+            sky_condition = [dict["weather"][0]["main"] for dict in filtered_data]
+            image_paths = [images[condition] for condition in sky_condition]
+            st.image(image_paths, width=170)
+    except KeyError:
+        st.warning("No data available for the selected location and forecasted days")
